@@ -9,10 +9,28 @@ const { phoneNumberFormatter } = require('./helpers/formatter');
 const fileUpload = require('express-fileupload');
 const axios = require('axios');
 const port = process.env.PORT || 8000;
-
+const toRupiah = require('@develoka/angka-rupiah-js');
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
+
+var FormData = require('form-data');
+var data = new FormData();
+data.append('method', 'getInfo');
+data.append('timestamp', '1578304294000');
+data.append('recvWindow', '1578303937000');
+
+var config = {
+  method: 'post',
+  url: 'https://indodax.com/tapi',
+  headers: { 
+    'Key': '16PAUVB9-DLLFQ7O6-NQJFR6FL-16PS8RV2-T5KDREP2', 
+    'Sign': 'ec3674c67f0a2a9cfa6b63b2d531290d97f23d6048958a60fdf7c3a41e9b3df6019e23bf6f9e6db3e0b582ee383f18979837e1d4f4cc5488404886a5b7aa24ff', 
+    'Cookie': '__cfduid=d56bed29e8266cbb7db94e808d28d398c1609741247; btcid=db560d0a61d9a8ed4c1e191aa1997ac8', 
+    ...data.getHeaders()
+  },
+  data : data
+};
 
 app.use(express.json());
 app.use(express.urlencoded({
@@ -72,6 +90,38 @@ client.on('message', msg => {
         msg.reply(replyMsg);
       }
     });
+  }else if(msg.body == 'Cek') {
+    axios(config)
+    .then(function (response) {
+        var configs = {
+            method: 'post',
+            url: 'https://indodax.com/api/summaries',
+            headers: { 
+              'Cookie': '__cfduid=d56bed29e8266cbb7db94e808d28d398c1609741247; btcid=db560d0a61d9a8ed4c1e191aa1997ac8'
+            }
+          };
+          
+          axios(configs)
+          .then(function (responses) {
+            msg.reply(''
+            +'ETH '+response.data.return.balance.eth+' = '+toRupiah((response.data.return.balance.eth*responses.data.tickers.eth_idr.last))+'\nHarga sekarang '+toRupiah(responses.data.tickers.eth_idr.last)+'\n================================\n\n'
+            +'Kur ETH '+(response.data.return.balance.eth-0.19581788)+' = '+toRupiah(((response.data.return.balance.eth-0.19581788)*responses.data.tickers.eth_idr.last))+'\nHarga sekarang '+toRupiah(responses.data.tickers.eth_idr.last)+'\n================================\n\n'
+            +'Nal ETH '+0.19581788+' = '+toRupiah((0.19581788*responses.data.tickers.eth_idr.last))+'\nHarga sekarang '+toRupiah(responses.data.tickers.eth_idr.last)+'\n================================\n\n'
+            +'ETC '+response.data.return.balance.etc+' = '+toRupiah((response.data.return.balance.etc*responses.data.tickers.etc_idr.last))+'\nHarga sekarang '+toRupiah(responses.data.tickers.etc_idr.last)+'\n================================\n\n'
+            +'WAVES '+response.data.return.balance.waves+' = '+toRupiah((response.data.return.balance.waves*responses.data.tickers.waves_idr.last))+'\nHarga sekarang '+toRupiah(responses.data.tickers.waves_idr.last)+'\n================================\n\n'
+            +'XRP '+response.data.return.balance.xrp+' = '+toRupiah((response.data.return.balance.xrp*responses.data.tickers.xrp_idr.last))+'\nHarga sekarang '+toRupiah(responses.data.tickers.xrp_idr.last)+'\n================================\n\n'
+            );
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+       
+        // console.log(JSON.stringify());
+    })
+    .catch(function (error) {
+    console.log(error);
+    });
+
   }
 });
 
